@@ -29,7 +29,14 @@
 #include "pycrypto_common.h"
 #include <stdio.h>
 #include <string.h>
+
+#ifdef Py_HAVE_LONG_MPZ_API
+#ifndef HAVE_LIBGMP
+#error Pyston only supports GMP.
+#endif
+#else
 #include <longintrepr.h>				/* for conversions */
+#endif
 #if HAVE_LIBGMP
 # include <gmp.h>
 #elif HAVE_LIBMPIR
@@ -60,6 +67,19 @@
 static unsigned int sieve_base[10000];
 static int rabinMillerTest (mpz_t n, int rounds, PyObject *randfunc);
 
+#ifdef Py_HAVE_LONG_MPZ_API
+static void
+longObjToMPZ (mpz_t m, PyLongObject * p)
+{
+    _PyLong_AsMPZ ((PyObject*)p, m);
+}
+
+static PyObject *
+mpzToLongObj (mpz_t m)
+{
+    return _PyLong_FromMPZ (m);
+}
+#else
 static void
 longObjToMPZ (mpz_t m, PyLongObject * p)
 {
@@ -113,6 +133,7 @@ mpzToLongObj (mpz_t m)
 	mpz_clear (temp);
 	return (PyObject *) l;
 }
+#endif
 
 typedef struct
 {
